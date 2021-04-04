@@ -3,13 +3,28 @@ import * as PIXI from 'pixi.js';
 import {TweenLite, Sine} from 'gsap';
 let app = {};
 let data = {};
-let colors = [0xcc0000, 0x00cc00, 0x0000cc];
+let colors = [0x24c2d9, 0xeb8e0a, 0xf04db1, 0x6ed75d, 0xa45bff, 0xc4cf7c, 0x989bad];
 let bars = [];
 const chartMargin = {top: 10, bottom : 15, left: 130, right: 10};
 const waveCount = 6;
 let chartSize = {width: 0, height: 0};
 let barValues = [];
-let mode = 0;
+let labelContainer;
+const labelMatrix = [
+  [1, 3], 
+  [2, 3], 
+  [3, 4], 
+  [4, 5], 
+  [5, 6],
+  [10, 3], 
+  [15, 4],
+  [20, 5], 
+  [50, 6], 
+  [100, 5], 
+  [250, 6], 
+  [500, 4], 
+  [1000, 5]
+];
 function createApp() {
   const appContainer = document.querySelector('.pixi-stage');
   const appSize = {
@@ -47,20 +62,21 @@ function initValues () {
   }
 }
 function updateValues () {
-  data = {
-    value1: {
-      label: 'Value 1',
-      value: Number(document.querySelector('#value1').value)
-    },
-    value2: {
-      label: 'Value 2',
-      value: Number(document.querySelector('#value2').value)
-    },
-    value3: {
-      label: 'Value 3',
-      value: Number(document.querySelector('#value3').value)
+  const inputs = document.querySelectorAll('.chart-inputs input[type="number"]');
+  data = {};
+  for(let i = 0; i < inputs.length; i++){
+    const labelText = inputs[i].getAttribute('id');
+    if(inputs[i].value > Number(inputs[i].getAttribute('max'))){
+      inputs[i].value = inputs[i].getAttribute('max');
     }
-  };
+    if(inputs[i].value < Number(inputs[i].getAttribute('min'))){
+      inputs[i].value = inputs[i].getAttribute('min');
+    }
+    data[labelText] = {
+      label: labelText,
+      value: Number(inputs[i].value)
+    }
+  }
   render();
 }
 function getHighestValue(){
@@ -74,7 +90,8 @@ function getHighestValue(){
 
 }
 function render () {
-  let highest = getHighestValue();
+  let maxVal = getHighestValue();
+  const highest = createLabels(maxVal);
   let keys = Object.keys(data);
   for(let i = 0; i < keys.length; i++){
     let height = (data[keys[i]].value / highest) * chartSize.height;
@@ -85,9 +102,11 @@ function render () {
     }
   }
 }
+
 function redraw (barVal, index) {
-  let offset = chartSize.width * .33 * index;
-  let barWidth = chartSize.width * .28;
+  const footprint = 1 / Object.keys(data).length;
+  let offset = chartSize.width * footprint * index;
+  let barWidth = chartSize.width * footprint * .8;
   let points = [
     {x: chartMargin.left + barWidth + offset, y: chartMargin.top + chartSize.height},
     {x: chartMargin.left + offset, y: chartMargin.top + chartSize.height}
@@ -110,7 +129,37 @@ function redraw (barVal, index) {
   if(barValues[index].intensity > 0){
     barValues[index].intensity -= .0002;
   }
+  app.stage.addChild(labelContainer);
 }
+
+function createLabels (max) {
+  if(!labelContainer){
+    labelContainer = new PIXI.Sprite();
+    app.stage.addChild(labelContainer);
+  }
+  for (let i = labelContainer.children.length; i >= 0; i--) {
+    labelContainer.removeChild(labelContainer.children[i]);
+  }
+  let labelIndex = 0;
+  for (let i = 0; i < labelMatrix.length; i++) {
+    if(labelMatrix[i][0] < max) {
+      labelIndex = i + 1;
+    }
+  }
+  for (let i = 0; i <= labelMatrix[labelIndex][1]; i++) {
+    let label = new PIXI.Text((labelMatrix[labelIndex][0] / (labelMatrix[labelIndex][1] - 1)) * i,{fontFamily : 'Arial', fontSize: '12', fill: 0x000000, align: 'left'});
+    label.y = (chartMargin.top + chartSize.height) - (chartSize.height / (labelMatrix[labelIndex][1] - 1) * i);
+    labelContainer.addChild(label);
+    let g = new PIXI.Graphics();
+    g.lineStyle(1,0x000000,1);
+    g.moveTo(0, 0);
+    g.lineTo(document.querySelector('.pixi-stage').getBoundingClientRect().width, 0);
+    g.y = label.y;
+    labelContainer.addChild(g);
+  }
+  return labelMatrix[labelIndex][0];
+}
+
 function createBar (color, path, graphic, spread) {
   let g = graphic ? graphic : new PIXI.Graphics();
   g.clear();
