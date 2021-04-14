@@ -31,12 +31,8 @@ let ratio = 0;
 let paths = [];
 let distances = [];
 let position = {x: 0, y: 0};
-let chartData = [
-  {label: 'Value 1', particles: [], value: 12},
-  {label: 'Value 2', particles: [], value: 9},
-  {label: 'Value 3', particles: [], value: 14},
-  {label: 'Value 4', particles: [], value: 4}
-];
+let chartData = [];
+let shapeIndex = 0;
 
 function getDataTotal () {
   let total = 0;
@@ -62,6 +58,9 @@ function populateData () {
   let valueCumulation = chartData[0].value;
   // console.log(total);
   // console.log(valueCumulation);
+  for (let i = 0; i < chartData.length; i++) {
+    chartData[i].particles = [];
+  }
   for (let i = 0; i < particles.length; i++) {
     const valueRatio = valueCumulation / total;
     if(i > valueRatio * particles.length){
@@ -207,12 +206,13 @@ function tweenSteps (target, steps, update, complete, _index) {
 // }
 
 
-function mapToShape (index, pList, offset, scale) {
+function mapToShape (index, pList, offset, scale, scatter) {
   const particleList = pList ? pList : particles;
   setPoints(shapes[index].data, .5);
   console.log(points);
   particleList[0].alpha = 0;
   for(let i = 1; i < particleList.length; i++){
+      particleList[i].alpha = 1;
       let targetPos = plot(i/particleList.length);
       targetPos.x = targetPos.x * scale;
       targetPos.y = targetPos.y * scale;
@@ -228,8 +228,16 @@ function mapToShape (index, pList, offset, scale) {
       let yInDuration = (durationTotal / 4) + (Math.random() * (durationTotal / 2));
       let yOutDuration = durationTotal - yInDuration;
       // console.log(targetPos);
-      tweenSteps(particleList[i].position, [{duration: xInDuration, ease: Math.random() > .5 ? Sine.easeIn : Sine.easeOut, values: {x: getRandomPointPosition().x}}, {duration: xOutDuration, ease: Math.random() > .5 ? Sine.easeOut : Sine.easeIn, values: {x: targetPos.x}}], update, completed);
-      tweenSteps(particleList[i].position, [{duration: yInDuration, ease: Math.random() > .5 ? Sine.easeOut : Sine.easeIn, values: {y: getRandomPointPosition().y}}, {duration: yOutDuration, ease: Math.random() > .5 ? Sine.easeIn : Sine.easeOut, values: {y: targetPos.y}}], update, completed);
+      let xList = [];
+      let yList = [];
+      if(scatter){
+        xList.push({duration: xInDuration, ease: Math.random() > .5 ? Sine.easeIn : Sine.easeOut, values: {x: getRandomPointPosition().x}});
+        yList.push({duration: yInDuration, ease: Math.random() > .5 ? Sine.easeOut : Sine.easeIn, values: {y: getRandomPointPosition().y}});
+      }
+      xList.push({duration: xOutDuration, ease: Math.random() > .5 ? Sine.easeOut : Sine.easeIn, values: {x: targetPos.x}});
+      yList.push({duration: yOutDuration, ease: Math.random() > .5 ? Sine.easeIn : Sine.easeOut, values: {y: targetPos.y}});
+      tweenSteps(particleList[i].position, xList, update, completed);
+      tweenSteps(particleList[i].position, yList, update, completed);
   }
 }
 function update(){
@@ -242,12 +250,59 @@ function getRandomPointPosition () {
   return {x: Math.random() * 1000, y: Math.random() * 800};
 }
 
-function rendrerChart(index){
+function rendrerChart(index, scatter){
   populateData();
   const shift = 300;
   for(let i = 0; i < chartData.length; i++){
-    mapToShape(index, chartData[i].particles, {x: shift * i, y: 300}, chartData[i].value / getHighest());
+    mapToShape(index, chartData[i].particles, {x: shift * i, y: 300}, chartData[i].value / getHighest(), scatter);
   }
+}
+
+function renderSymbolSelectors(){
+  const selectorContainer = document.querySelector('.symbol-selector');
+  for(let i = 0; i < shapes.length; i++) {
+    let label = document.createElement('label');
+    let input = document.createElement('input');
+    let text = document.createElement('span');
+    input.setAttribute('type', 'radio');
+    input.setAttribute('name', 'shape');
+    input.setAttribute('val', i);
+    input.addEventListener('change', (e) => {
+      console.log(e);
+      if(e.returnValue){
+        console.log(Number(e.currentTarget.getAttribute('val')));
+        shapeIndex = Number(e.currentTarget.getAttribute('val'));
+        rendrerChart(shapeIndex, true);
+      }
+    })
+    text.innerText = shapes[i].name;
+    selectorContainer.appendChild(label);
+    label.appendChild(input);
+    label.appendChild(text);
+  }
+}
+
+function readData(){
+  chartData = [];
+  const valueElements = document.querySelectorAll('.values label');
+  // console.log(valueElements);
+  for(let i = 0; i < valueElements.length; i++) {
+    const input = valueElements[i].querySelector('input[type="number"]');
+    chartData.push({
+      value: Number(input.value),
+      label: valueElements[i].querySelector('span').innerText,
+      particles: []
+    });
+    input.addEventListener('change', () => {
+      chartData[i].value = Number(input.value);
+      rendrerChart(shapeIndex);
+    });
+    input.addEventListener('keyup', () => {
+      chartData[i].value = Number(input.value);
+      rendrerChart(shapeIndex);
+    });
+  }
+  console.log(chartData);
 }
 
 function init (count) {
@@ -256,6 +311,7 @@ function init (count) {
   app.stage.addChild(container);
   container.scale.x = .33;
   container.scale.y = container.scale.x;
+  readData();
   for(let i = 0; i < count; i++){
     const dot = createDot({x: 0, y: 0}, dotStyles[0]);
     const randomPos = getRandomPointPosition();
@@ -268,7 +324,8 @@ function init (count) {
   // populateData();
   // console.log(chartData);
   // mapToShape(0);
-  rendrerChart(0);
+  rendrerChart(shapeIndex, true);
+  renderSymbolSelectors();
   console.log(particles);
 }
 
