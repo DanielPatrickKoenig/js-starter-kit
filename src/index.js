@@ -6,11 +6,15 @@ import nj from 'numjs';
 
 const chartMargin = {top: 10, bottom : 15, left: 130, right: 10};
 let chartSize = {width: 0, height: 0};
+const chartColor = 0xcaedff;
 const dotStyles = [
-  {fill: 0x000000, fillOpacity: 1, strokeWidth: 0, stroke: 0x000000, strokeOpacity: 0, radius: 4}
+  {fill: chartColor, fillOpacity: 1, strokeWidth: 0, stroke: 0x000000, strokeOpacity: 0, radius: 4}
 ];
 let particles = [];
 let app;
+const shift = 300;
+let labelContainer;
+const containerScale = .33;
 
 const line = [[{x: 0, y: 0}, {x: 0, y: -100}]]
 const house = [[{x:300.94140625,y:289.755859375},{x:310.146484375,y:298.73681640625},{x:319.2763671875,y:307.99169921875},{x:328.4052734375,y:317.2470703125},{x:337.5341796875,y:326.50244140625},{x:346.6640625,y:335.75732421875},{x:355.79296875,y:345.01220703125},{x:364.921875,y:354.267578125},{x:374.0517578125,y:363.5224609375},{x:383.1806640625,y:372.77783203125},{x:392.3095703125,y:382.03271484375},{x:401.439453125,y:391.2880859375},{x:410.568359375,y:400.54296875},{x:419.6982421875,y:409.79736328125},{x:428.8271484375,y:419.05322265625},{x:437.9560546875,y:428.3076171875},{x:443.7236328125,y:436.27734375},{x:430.7236328125,y:436.27734375},{x:424.5,y:443.0537109375},{x:424.5,y:456.0537109375},{x:424.5,y:469.0537109375},{x:424.5,y:482.0537109375},{x:424.5,y:495.0537109375},{x:424.5,y:508.0537109375},{x:424.5,y:521.0537109375},{x:424.5,y:534.0537109375},{x:424.5,y:547.0537109375},{x:424.5,y:560.0537109375},{x:424.5,y:573.0537109375},{x:424.5,y:586.0537109375},{x:424.5,y:599.0537109375},{x:418.9462890625,y:606.5},{x:405.9462890625,y:606.5},{x:392.9462890625,y:606.5},{x:385.5,y:600.9462890625},{x:385.5,y:587.9462890625},{x:385.5,y:574.9462890625},{x:385.5,y:561.9462890625},{x:385.5,y:548.9462890625},{x:385.5,y:535.9462890625},{x:379.9462890625,y:528.5},{x:366.9462890625,y:528.5},{x:353.9462890625,y:528.5},{x:340.9462890625,y:528.5},{x:329.5,y:530.0537109375},{x:329.5,y:543.0537109375},{x:329.5,y:556.0537109375},{x:329.5,y:569.0537109375},{x:329.5,y:582.0537109375},{x:329.5,y:595.0537109375},{x:327.9462890625,y:606.5},{x:314.9462890625,y:606.5},{x:301.9462890625,y:606.5},{x:288.94580078125,y:606.5},{x:275.94580078125,y:606.5},{x:262.94580078125,y:606.5},{x:249.94580078125,y:606.5},{x:236.94580078125,y:606.5},{x:223.94580078125,y:606.5},{x:210.94580078125,y:606.5},{x:197.94580078125,y:606.5},{x:184.94580078125,y:606.5},{x:178.5,y:599.9462890625},{x:178.5,y:586.9462890625},{x:178.5,y:573.9462890625},{x:178.5,y:560.9462890625},{x:178.5,y:547.9462890625},{x:178.5,y:534.9462890625},{x:178.5,y:521.9462890625},{x:178.5,y:508.9462890625},{x:178.5,y:495.9462890625},{x:178.5,y:482.9462890625},{x:178.5,y:469.9462890625},{x:178.5,y:456.9462890625},{x:178.5,y:443.9462890625},{x:173.16845703125,y:436.27734375},{x:164.0029296875,y:428.9423828125},{x:160.16845703125,y:436.27734375},{x:173.13232421875,y:419.68798828125},{x:182.26123046875,y:410.43310546875},{x:191.390625,y:401.177734375},{x:200.52001953125,y:391.9228515625},{x:209.6494140625,y:382.66748046875},{x:218.7783203125,y:373.41259765625},{x:227.90771484375,y:364.1572265625},{x:237.037109375,y:354.90234375},{x:246.16650390625,y:345.6474609375},{x:255.29541015625,y:336.39208984375},{x:264.4248046875,y:327.13720703125},{x:273.55419921875,y:317.8818359375},{x:282.68310546875,y:308.626953125},{x:291.8125,y:299.37158203125}],[{x:235,y:489.5},{x:229.5,y:497},{x:229.5,y:510},{x:229.5,y:523},{x:229.5,y:536},{x:233,y:545.5},{x:246,y:545.5},{x:259,y:545.5},{x:272,y:545.5},{x:285,y:545.5},{x:285.5,y:543},{x:285.5,y:530},{x:285.5,y:517},{x:285.5,y:504},{x:285.5,y:491},{x:274,y:489.5},{x:261,y:489.5},{x:248,y:489.5}]];
@@ -252,9 +256,8 @@ function getRandomPointPosition () {
 
 function rendrerChart(index, scatter){
   populateData();
-  const shift = 300;
   for(let i = 0; i < chartData.length; i++){
-    mapToShape(index, chartData[i].particles, {x: shift * i, y: 300}, chartData[i].value / getHighest(), scatter);
+    mapToShape(index, chartData[i].particles, {x: shift * i, y: 550}, chartData[i].value / getHighest(), scatter);
   }
 }
 
@@ -279,6 +282,19 @@ function renderSymbolSelectors(){
     selectorContainer.appendChild(label);
     label.appendChild(input);
     label.appendChild(text);
+  }
+}
+
+function createLabels(){
+  for(let i = labelContainer.children.length; i >= 0; i--) {
+    labelContainer.removeChild(labelContainer.children[i]);
+  }
+  for(let i = 0; i < chartData.length; i++) {
+    let label = new PIXI.Text(chartData[i].label, {fontFamily : 'Arial', fontSize: 48, fill: chartColor});
+    label.position.x = shift * i;
+    label.position.y = 200;
+    label.anchor.x = 0.5;
+    labelContainer.addChild(label);
   }
 }
 
@@ -309,8 +325,11 @@ function init (count) {
   // processRatios();
   const container = new PIXI.Sprite();
   app.stage.addChild(container);
-  container.scale.x = .33;
+  container.scale.x = containerScale;
   container.scale.y = container.scale.x;
+  labelContainer = new PIXI.Sprite();
+  container.addChild(labelContainer);
+  labelContainer.y = 400;
   readData();
   for(let i = 0; i < count; i++){
     const dot = createDot({x: 0, y: 0}, dotStyles[0]);
@@ -320,10 +339,12 @@ function init (count) {
     container.addChild(dot);
     particles.push(dot);
   }
+  container.x = ((chartData.length - 1) * shift * container.scale.x) / 3;
   // setInterval(() => {mapToShape(Math.floor(Math.random() * 3));}, 5000);
   // populateData();
   // console.log(chartData);
   // mapToShape(0);
+  createLabels();
   rendrerChart(shapeIndex, true);
   renderSymbolSelectors();
   console.log(particles);

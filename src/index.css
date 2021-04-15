@@ -1,3 +1,7 @@
+body{
+  background-color: #000000;
+  color: #caedff;
+}
 main{
   position: fixed;
   top: 0;
@@ -13,4 +17,13 @@ main{
 .pixi-stage{
   width: 500px;
   height: 300px;
+}
+
+.values, .symbol-selector{
+  max-width: 600px;
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  flex-wrap: wrap;
 }
