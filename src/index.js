@@ -15,6 +15,8 @@ let metrics = ['Value 1', 'Value 2', 'Value 3', 'Value 4', 'Value 5', 'Value 6',
 let metricsMap = [0, 1, 2 ,3];
 let chartData = [];
 let spheres = [];
+let mainElement;
+let shiftFactor = {x: 1, y: 1};
 for(let i = 0; i < points; i++){
   let values = [];
   for(let j = 0; j < metrics.length; j++){
@@ -65,6 +67,23 @@ function upateSpheres(){
     });
   }
 }
+function processEvent(e){
+  return {x: e.pageX, y: e.pageY};
+}
+function onUserMove(e){
+  const cursorPosition = processEvent(e);
+  const bounds = mainElement.getBoundingClientRect();
+  const hCenter = bounds.width / 2;
+  const hOffset = (hCenter - cursorPosition.x) * .005;
+  const vCenter = bounds.height / 2;
+  const vOffset = (vCenter - cursorPosition.y) * .005;
+  // console.log(cursorPosition);
+  // camera.rotation.y = (30 + hOffset) * (Math.PI / 180);
+  camera.position.x = (positionMax * 1.5) + (hOffset * -1 * shiftFactor.x);
+  camera.position.y = (positionMax * 1.5) + (vOffset * shiftFactor.y);
+  camera.position.z = (positionMax * 1.5) + (hOffset * shiftFactor.x);
+  renderer.render(scene, camera);
+}
 
 window.onload = () => {
   
@@ -107,6 +126,10 @@ window.onload = () => {
   zBar.scale.z = positionMax;
   upateSpheres();
   console.log(spheres);
+  console.log(camera);
+
+  mainElement = document.querySelector('main');
+  mainElement.addEventListener("mousemove", onUserMove);
 }
 
 // let camera = !self.isOrthographic > 0 ? new THREE.PerspectiveCamera(self.perspective, _width / _height, 1, 1000) : new THREE.OrthographicCamera(_width / (self.$data.axisData.scale * -2), _width / (self.$data.axisData.scale * 2), _height / (self.$data.axisData.scale * -2), _height / (self.$data.axisData.scale * 2), 1, 1000)
